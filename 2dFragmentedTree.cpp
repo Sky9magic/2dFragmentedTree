@@ -1,121 +1,143 @@
+#pragma GCC optimize("O3", "unroll-loops")
 #include <iostream>
-#include <vector>
 #include <set>
+#include <vector>
 using namespace std;
-const long long INF=(long long)9e18;
-long long n,m;
-struct minsegtree{
-    int l,r,yl,yr;
-    long long val,lazy;
-    minsegtree *left,*right;
-    minsegtree(int l_,int r_,int yl_,int yr_):l(l_),r(r_),yl(yl_),yr(yr_),val(0),lazy(0),left(NULL),right(NULL){}
-    ~minsegtree() {
-        if (left) delete left;
-        if (right) delete right;
+typedef long long ll;
+#define lgm cin.tie(0)->sync_with_stdio(0);
+const ll INF = 9e18;
+const ll MOD = 1e9+7;
+int m;
+struct Node {
+    ll val, lazy;
+    Node *l, *r;
+    Node(): val(0), lazy(0), l(nullptr), r(nullptr) {}
+};
+Node* build(int L, int R) {
+    Node* node = new Node();
+    if(L == R) {
+        node->val = 0;
+        return node;
     }
-    bool operator<(minsegtree&o)const {
-        return l<o.l;
+    int mid = (L + R) / 2;
+    node->l = build(L, mid);
+    node->r = build(mid+1, R);
+    node->val = min(node->l->val, node->r->val);
+    return node;
+}
+Node* upd(Node* node, int L, int R, int ql, int qr, int v) {
+    if (qr < L || ql > R) return node;
+    Node* newNode = new Node(*node);
+    if (ql <= L && R <= qr) {
+        newNode->val += v;
+        newNode->lazy += v;
+        return newNode;
     }
-    minsegtree* copy() {
-        minsegtree*tmp=new minsegtree(l,r,yl,yr);
-        tmp->val=val;
-        tmp->lazy=lazy;
-        if (left) {
-            tmp->left=left->copy();
-        }
-        if (right) {
-            tmp->right=right->copy();
-        }
-        return tmp;
+    int mid = (L + R) / 2;
+    if(newNode->lazy != 0) {
+        newNode->l = upd(newNode->l, L, mid, L, mid, newNode->lazy);
+        newNode->r = upd(newNode->r, mid+1, R, mid+1, R, newNode->lazy);
+        newNode->lazy = 0;
     }
-    minsegtree* divide(int idx) {
-        minsegtree* p;
-        p=copy();
-        r=idx;
-        p->l=idx+1;
-        return p;
+    newNode->l = upd(newNode->l, L, mid, ql, qr, v);
+    newNode->r = upd(newNode->r, mid+1, R, ql, qr, v);
+    newNode->val = min(newNode->l->val, newNode->r->val);
+    return newNode;
+}
+ll qry(Node* node, int L, int R, int ql, int qr) {
+    if (qr < L || ql > R) return INF;
+    if (ql <= L && R <= qr) return node->val;
+    int mid = (L + R) / 2;
+    Node* left;
+    Node* right;
+    if(node->lazy != 0) {
+        left = upd(node->l, L, mid, L, mid, node->lazy);
+        right = upd(node->r, mid+1, R, mid+1, R, node->lazy);
+    } else {
+        left = node->l;
+        right = node->r;
     }
-    void push() {
-        if (yl!=yr) {
-            int mid=(yl+yr)>>1;
-            if (left==NULL) {
-                left=new minsegtree(l,r,yl,mid);
-            }
-            left->lazy+=lazy;
-            left->val+=lazy;
-            if (right==NULL) {
-                right=new minsegtree(l,r,mid+1,yr);
-            }
-            right->lazy+=lazy;
-            right->val+=lazy;
-        }
-        lazy=0;
-    }
-    void upd(int tl,int tr,int v) {
-        if (yl>tr||yr<tl) return;
-        if (yl>=tl&&yr<=tr) {
-            lazy+=v;
-            val+=v;
-            return;
-        }
-        push();
-        left->upd(tl,tr,v);
-        right->upd(tl,tr,v);
-        val=min(left->val,right->val);
-    }
-    long long query(int tl,int tr) {
-        if (yl>tr||yr<tl) return INF;
-        if (yl>=tl&&yr<=tr) {
-            return val;
-        }
-        push();
-        int mid=(l+r)>>1;
-        return min(left->query(tl,tr),right->query(tl,tr));
+    return min(qry(left, L, mid, ql, qr),qry(right, mid+1, R, ql, qr));
+}
+struct Fragment {
+    ll L, R;
+    Node* segtree;
+    Fragment(ll l, ll r, Node* st) : L(l), R(r), segtree(st) {}
+};
+struct FragmentCmp {
+    bool operator()(const Fragment* a, const Fragment* b) const {
+        return a->L < b->L;
     }
 };
-struct fragmentsegtree{
-    set<minsegtree*> segtree;
-    fragmentsegtree(int n_,int m_){segtree.clear(),segtree.emplace(new minsegtree(1, n_, 1, m_));}
-    void upd(int xl,int xr,int yl,int yr,int v) {
-        vector<minsegtree*> add;
-        for (auto&i:segtree) {
-            if (i->l>xr||i->r<xl) continue;
-            if (i->l>=xl&&i->r<=xr) {
-                i->upd(yl,yr,v);
-            } else if (i->l<xl&&i->r>xr) {
-                minsegtree*p1=i->divide(xl-1),*p2=p1->divide(xr);
-                p1->upd(yl,yr,v);
-                add.push_back(p1);
-                add.push_back(p2);
-            } else if (i->l<xl&&i->r>=xl) {
-                minsegtree*p1=i->divide(xl-1);
-                p1->upd(yl,yr,v);
-                add.push_back(p1);
-            } else if (i->r>xr&&i->l<=xr) {
-                minsegtree* p1=i->divide(xr);
-                i->upd(yl,yr,v);
-                add.push_back(p1);
+struct FragmentTree {
+    set<Fragment*, FragmentCmp> frags;
+    FragmentTree(ll n, int m) {
+        m = m;
+        Node* st = build(1, m);
+        Fragment* initial = new Fragment(1, n, st);
+        frags.insert(initial);
+    }
+    void update(ll xl, ll xr, int yl, int yr, int v) {
+        vector<Fragment*> toRemove;
+        vector<Fragment*> toAdd;
+        for(auto frag : frags) {
+            if(frag->R < xl || frag->L > xr) continue;
+            toRemove.push_back(frag);
+            if(frag->L < xl) {
+                Fragment* upper = new Fragment(frag->L, xl - 1, frag->segtree);
+                toAdd.push_back(upper);
+            }
+            ll interL = max(frag->L, xl);
+            ll interR = min(frag->R, xr);
+            Node* updatedST = upd(frag->segtree, 1, m, yl, yr, v);
+            Fragment* mid = new Fragment(interL, interR, updatedST);
+            toAdd.push_back(mid);
+            if(frag->R > xr) {
+                Fragment* lower = new Fragment(xr + 1, frag->R, frag->segtree);
+                toAdd.push_back(lower);
             }
         }
-        for (auto&i:add) {
-            segtree.insert(i);
+        for(auto frag : toRemove) {
+            frags.erase(frag);
+            delete frag;
+        }
+        for(auto frag : toAdd) {
+            frags.insert(frag);
         }
     }
-    long long query(int xl,int xr,int yl,int yr) {
-        long long ans=0,val;
-        for (auto&i:segtree) {
-            if (i->l>xr||i->r<xl) continue;
-            if (i->l<=xl&&i->r>=xr) {
-                val=i->query(yl,yr)*(xr-xl+1);
-            } else if (i->l<=xl&&i->r>=xl) {
-                val=i->query(yl,yr)*(i->r-xl+1);
-            } else if (i->l<=xr&&i->r>=xr) {
-                val=i->query(yl,yr)*(xr-i->l+1);
-            } else if (i->l>=xl&&i->r<=xr) {
-                val=i->query(yl,yr)*(i->r-i->l+1);
-            }
-            ans+=val;
+    ll query(ll xl, ll xr, int yl, int yr) {
+        ll ans = 0;
+        for(auto frag : frags) {
+            if(frag->R < xl || frag->L > xr) continue;
+            ll interL = max(frag->L, xl);
+            ll interR = min(frag->R, xr);
+            ll rows = (interR - interL + 1);
+            ll minVal = qry(frag->segtree, 1, m, yl, yr);
+            ans = (ans + (minVal % MOD) * (rows % MOD)) % MOD;
         }
         return ans;
     }
 };
+int main(){
+    lgm;
+    ll n, q;
+    cin >> n >> m >> q;
+    FragmentTree ft(n, m);
+    while(q--){
+        int t;
+        cin >> t;
+        if(t == 1) {
+            ll x0, x1;
+            int y0, y1, v;
+            cin >> x0 >> x1 >> y0 >> y1 >> v;
+            ft.update(x0, x1, y0, y1, v);
+        } else {
+            ll x0, x1;
+            int y0, y1;
+            cin >> x0 >> x1 >> y0 >> y1;
+            cout << ft.query(x0, x1, y0, y1) << "\n";
+        }
+    }
+    
+    return 0;
+}
