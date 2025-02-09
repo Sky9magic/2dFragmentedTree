@@ -7,25 +7,25 @@ typedef long long ll;
 #define lgm cin.tie(0)->sync_with_stdio(0);
 const ll INF = 9e18;
 const ll MOD = 1e9+7;
-int m;
+ll m;
 struct Node {
     ll val, lazy;
     Node *l, *r;
     Node(): val(0), lazy(0), l(nullptr), r(nullptr) {}
 };
-Node* build(int L, int R) {
+Node* build(ll L, ll R) {
     Node* node = new Node();
     if(L == R) {
         node->val = 0;
         return node;
     }
-    int mid = (L + R) / 2;
+    ll mid = (L + R) / 2;
     node->l = build(L, mid);
     node->r = build(mid+1, R);
     node->val = min(node->l->val, node->r->val);
     return node;
 }
-Node* upd(Node* node, int L, int R, int ql, int qr, int v) {
+Node* upd(Node* node, ll L, ll R, ll ql, ll qr, ll v) {
     if (qr < L || ql > R) return node;
     Node* newNode = new Node(*node);
     if (ql <= L && R <= qr) {
@@ -33,7 +33,7 @@ Node* upd(Node* node, int L, int R, int ql, int qr, int v) {
         newNode->lazy += v;
         return newNode;
     }
-    int mid = (L + R) / 2;
+    ll mid = (L + R) / 2;
     if(newNode->lazy != 0) {
         newNode->l = upd(newNode->l, L, mid, L, mid, newNode->lazy);
         newNode->r = upd(newNode->r, mid+1, R, mid+1, R, newNode->lazy);
@@ -44,10 +44,10 @@ Node* upd(Node* node, int L, int R, int ql, int qr, int v) {
     newNode->val = min(newNode->l->val, newNode->r->val);
     return newNode;
 }
-ll qry(Node* node, int L, int R, int ql, int qr) {
+ll qry(Node* node, ll L, ll R, ll ql, ll qr) {
     if (qr < L || ql > R) return INF;
     if (ql <= L && R <= qr) return node->val;
-    int mid = (L + R) / 2;
+    ll mid = (L + R) / 2;
     Node* left;
     Node* right;
     if(node->lazy != 0) {
@@ -71,13 +71,13 @@ struct FragmentCmp {
 };
 struct FragmentTree {
     set<Fragment*, FragmentCmp> frags;
-    FragmentTree(ll n, int m) {
-        m = m;
+    FragmentTree(ll n, ll m_) {
+        m = m_;
         Node* st = build(1, m);
         Fragment* initial = new Fragment(1, n, st);
         frags.insert(initial);
     }
-    void update(ll xl, ll xr, int yl, int yr, int v) {
+    void update(ll xl, ll xr, ll yl, ll yr, int v) {
         vector<Fragment*> toRemove;
         vector<Fragment*> toAdd;
         for(auto frag : frags) {
@@ -105,15 +105,15 @@ struct FragmentTree {
             frags.insert(frag);
         }
     }
-    ll query(ll xl, ll xr, int yl, int yr) {
+    ll query(ll xl, ll xr, ll yl, ll yr) {
         ll ans = 0;
         for(auto frag : frags) {
             if(frag->R < xl || frag->L > xr) continue;
             ll interL = max(frag->L, xl);
             ll interR = min(frag->R, xr);
             ll rows = (interR - interL + 1);
-            ll minVal = qry(frag->segtree, 1, m, yl, yr);
-            ans = (ans + (minVal % MOD) * (rows % MOD)) % MOD;
+            ll minVal = qry(frag->segtree, 1, m, yl, yr)%MOD;
+            ans = (ans + minVal * (rows % MOD)) % MOD;
         }
         return ans;
     }
@@ -138,6 +138,5 @@ int main(){
             cout << ft.query(x0, x1, y0, y1) << "\n";
         }
     }
-    
     return 0;
 }
