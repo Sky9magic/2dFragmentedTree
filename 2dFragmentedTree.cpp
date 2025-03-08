@@ -44,8 +44,8 @@ Node* upd(Node*node,ll L,ll R,ll ql,ll qr,ll v) {
     }
     ll mid=(L+R)/2;
     if (newNode->lazy!=0) {
-        newNode->l=upd(newNode->l,L,mid,ql,qr,newNode->lazy);
-        newNode->r=upd(newNode->r,mid+1,R,ql,qr,newNode->lazy);
+        newNode->l=upd(newNode->l,L,mid,L,mid,newNode->lazy);
+        newNode->r=upd(newNode->r,mid+1,R,mid+1,R,newNode->lazy);
         newNode->lazy=0;
     }
     newNode->l=upd(newNode->l,L,mid,ql,qr,v);
@@ -59,8 +59,8 @@ ll qry(Node*node,ll L,ll R,ll ql,ll qr) {
     ll mid=(L+R)/2;
     Node*left,*right;
     if (node->lazy!=0) {
-        left=upd(node->l,L,mid,ql,qr,node->lazy);
-        right=upd(node->r,mid+1,R,ql,qr,node->lazy);
+        left=upd(node->l,L,mid,L,mid,node->lazy);
+        right=upd(node->r,mid+1,R,mid+1,R,node->lazy);
     } else {
         left=node->l;
         right=node->r;
