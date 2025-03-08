@@ -65,7 +65,7 @@ ll qry(Node*node,ll L,ll R,ll ql,ll qr) {
         left=node->l;
         right=node->r;
     }
-    return cmb1(qry(left, L, mid, ql, qr),qry(right, mid+1, R, ql, qr));
+    return cmb1(qry(left,L,mid,ql,qr),qry(right,mid+1,R,ql,qr));
 }
 struct Fragment{
     ll L,R;
