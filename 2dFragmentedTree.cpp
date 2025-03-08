@@ -79,7 +79,7 @@ struct FragmentCmp{
 };
 struct FragmentTree{
     set<Fragment*,FragmentCmp> frags;
-    FragmentTree(ll n, ll m_) {
+    FragmentTree(ll n,ll m_) {
         m=m_;
         Node*st=build(1,m);
         Fragment*init=new Fragment(1,n,st);
@@ -111,7 +111,7 @@ struct FragmentTree{
             frags.insert(frag);
         }
     }
-    ll query(ll xl, ll xr, ll yl, ll yr) {
+    ll query(ll xl,ll xr,ll yl,ll yr) {
         ll ans=0;
         for(auto frag:frags) {
             if(frag->R<xl||frag->L>xr) continue;
