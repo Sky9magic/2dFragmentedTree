@@ -99,7 +99,7 @@ struct FragmentTree{
             Fragment*mid=new Fragment(interL,interR,updatedST);
             toAdd.push_back(mid);
             if (frag->R>xr) {
-                Fragment*lower = new Fragment(xr+1,frag->R,frag->segtree);
+                Fragment*lower=new Fragment(xr+1,frag->R,frag->segtree);
                 toAdd.push_back(lower);
             }
         }
@@ -118,7 +118,7 @@ struct FragmentTree{
             ll  interL=max(frag->L,xl),
                 interR=min(frag->R,xr),
                 rows=(interR-interL+1),
-                minVal=qry(frag->segtree,1,m,yl,yr)%mod;
+                minVal=qry(frag->segtree,1,m,yl,yr)%mod; // you can remove the modulo if you want to
             ans=(ans+minVal*(rows%mod))%mod; // change this to what you need, or just remove modulo
         }
         return ans;
